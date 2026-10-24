@@ -17,6 +17,7 @@ import (
 	"os"
 
 	"connectrpc.com/connect"
+	"github.com/altipla-consulting/errors"
 	"github.com/altipla-consulting/sts-go"
 )
 
@@ -35,6 +36,41 @@ accepts only `Authorization: Bearer local-token` and skips remote verification a
 permission checks. The verifier token is unused in local environments.
 
 The interceptor applies to unary RPCs; streaming RPCs are not authenticated by it.
+
+### Permissions inside handlers
+
+Register the interceptor without permissions to authenticate every method, then use
+`sts.RequirePermissions` inside methods that need specific permissions:
+
+```go
+interceptor := sts.NewInterceptor(os.Getenv("STS_VERIFIER_TOKEN"))
+handlerOptions := connect.WithInterceptors(interceptor)
+```
+
+For example, in a generated Connect handler implementation:
+
+```go
+func (s *DocumentsService) Delete(ctx context.Context, req *connect.Request[pb.DeleteRequest]) (*connect.Response[pb.DeleteResponse], error) {
+	if err := sts.RequirePermissions(ctx, "documents.delete"); err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	// Delete the document.
+	return connect.NewResponse(&pb.DeleteResponse{}), nil
+}
+```
+
+Use your generated service and protobuf types in place of the example types above.
+Pass the handler's context to the helper; the interceptor stores verified permissions
+there. Every supplied permission is required. Missing permissions return
+`connect.CodePermissionDenied`; calling the helper without the authentication
+interceptor returns `missing authentication interceptor`, even when no permissions
+are supplied.
+
+You can also keep service-wide permissions in `NewInterceptor` and require additional
+permissions inside individual handlers. Both checks return `connect.CodePermissionDenied`
+for missing permissions. Locally, a request authenticated with `local-token` skips
+both checks.
 
 ## Contributing
 

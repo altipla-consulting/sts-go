@@ -16,7 +16,15 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+type authenticationKey struct{}
+
+type authentication struct {
+	permissions []string
+	local       bool
+}
+
 // NewInterceptor authenticates unary handler requests and requires every listed permission.
+// Verified permissions are available to RequirePermissions in the handler context.
 // When env.IsLocal reports a local environment, only local-token is accepted and remote verification and permission checks are skipped.
 func NewInterceptor(verifierToken string, permissions ...string) connect.Interceptor {
 	client := verifyconnect.NewVerifyServiceClient(http.DefaultClient, "https://sts.altipla.consulting")
@@ -34,6 +42,7 @@ func NewInterceptor(verifierToken string, permissions ...string) connect.Interce
 				if parts[1] != "local-token" {
 					return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("invalid local token, it should be local-token"))
 				}
+				ctx = context.WithValue(ctx, authenticationKey{}, authentication{local: true})
 				return next(ctx, in)
 			}
 
@@ -49,14 +58,32 @@ func NewInterceptor(verifierToken string, permissions ...string) connect.Interce
 				return nil, errors.Trace(err)
 			}
 
-			for _, permission := range permissions {
-				if !slices.Contains(resp.Msg.GetPermissions(), permission) {
-					slog.Warn("missing permission", slog.String("perm", permission))
-					return nil, connect.NewError(connect.CodeUnauthenticated, errors.Errorf("missing permission %q", permission))
-				}
+			ctx = context.WithValue(ctx, authenticationKey{}, authentication{permissions: resp.Msg.GetPermissions()})
+			if err := RequirePermissions(ctx, permissions...); err != nil {
+				return nil, errors.Trace(err)
 			}
 
 			return next(ctx, in)
 		}
 	})
+}
+
+// RequirePermissions requires an authenticated context from NewInterceptor and every listed permission.
+// Permission checks are skipped for requests authenticated with local-token in local environments.
+func RequirePermissions(ctx context.Context, permissions ...string) error {
+	auth, ok := ctx.Value(authenticationKey{}).(authentication)
+	if !ok {
+		return errors.Errorf("missing authentication interceptor")
+	}
+	if auth.local {
+		return nil
+	}
+
+	for _, permission := range permissions {
+		if !slices.Contains(auth.permissions, permission) {
+			slog.Warn("missing permission", slog.String("perm", permission))
+			return connect.NewError(connect.CodePermissionDenied, errors.Errorf("missing permission %q", permission))
+		}
+	}
+	return nil
 }
