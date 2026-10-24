@@ -1,9 +1,9 @@
-buf.build/gen/go/altipla/sts/connectrpc/go v1.21.0-20260730112142-3c00f9556107.1 h1:MVrjUlEQ4pbfaHegGWiWXj3KzZUueacqhai/z2JcAbI=
-buf.build/gen/go/altipla/sts/connectrpc/go v1.21.0-20260730112142-3c00f9556107.1/go.mod h1:sEC5WAKStsDqfSzOg4fYsCHv2Yrf3rmMmVegR+sZiMk=
+buf.build/gen/go/altipla/sts/connectrpc/go/v2 v2.0.2-20260730112142-3c00f9556107.1 h1:VzHnpgG5Li+5emRh4mN583KAUpNcQkPcU5NbZYcgK0I=
+buf.build/gen/go/altipla/sts/connectrpc/go/v2 v2.0.2-20260730112142-3c00f9556107.1/go.mod h1:S+efv5zfdkrPMsBJ2QOJChfd+iFRpAJhF1UnUJOosmY=
 buf.build/gen/go/altipla/sts/protocolbuffers/go v1.36.12-20260730112142-3c00f9556107.2 h1:3Gnwyh49Ni7V+r7mXNsglMOCyehuZ5R8qVacYNz0pgU=
 buf.build/gen/go/altipla/sts/protocolbuffers/go v1.36.12-20260730112142-3c00f9556107.2/go.mod h1:puIoWMdmsBi/fSIacwKdk6D9b2JJNaHG0ujgSADvDi0=
-connectrpc.com/connect v1.21.1 h1:h2kacdlzXpZU2OQFSv98xkjYXNUSr/ptxmGVbS/+CRM=
-connectrpc.com/connect v1.21.1/go.mod h1:fhMcVJ5w6r/yTYhnkEbW6+sIF7OZ5Ay7KYgmfebh2ek=
+connectrpc.com/connect/v2 v2.0.2 h1:PoPDmOlhc46elsuCdKCKTxjNBb3HJlKF+s/sP2oucPw=
+connectrpc.com/connect/v2 v2.0.2/go.mod h1:N32OLrstcPUzkykFynnefFro3+xzSdOrZlK2jHmS/xo=
 github.com/altipla-consulting/env v0.3.0 h1:JbvhorpdxLhEGftVQGaff2BLoFNPoWibszH1CS8W7fA=
 github.com/altipla-consulting/env v0.3.0/go.mod h1:0wGCiA8OUISdQbBVS5bBeJAteFThsVuQAgDIZUYDFiA=
 github.com/altipla-consulting/errors v1.5.1 h1:uhKRXFxuAhTYYrE2p2P9jpiCJbBvLv4cKBVN1uH9hZY=
