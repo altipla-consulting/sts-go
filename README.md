@@ -10,22 +10,22 @@ go get github.com/altipla-consulting/sts-go
 
 ## Usage
 
-The module exports package `sts`. Register the interceptor on your unary handlers:
+The module exports package `sts`. Register the interceptor on your server:
 
 ```go
 import (
 	"os"
 
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/altipla-consulting/errors"
 	"github.com/altipla-consulting/sts-go"
 )
 
 interceptor := sts.NewInterceptor(os.Getenv("STS_VERIFIER_TOKEN"), "documents.read")
-handlerOptions := connect.WithInterceptors(interceptor)
+server := connect.NewServer(interceptor)
 ```
 
-Pass `handlerOptions` to your generated Connect handler constructor. Clients must send
+Register your generated Connect handlers on `server`. Clients must send
 `Authorization: Bearer <key>`. STS verifies the key using your verifier token, and the
 interceptor requires every supplied permission before calling the handler. Omit the
 permissions to accept any key that STS successfully verifies.
@@ -35,7 +35,7 @@ Local environments are detected automatically using
 accepts only `Authorization: Bearer local-token` and skips remote verification and
 permission checks. The verifier token is unused in local environments.
 
-The interceptor applies to unary RPCs; streaming RPCs are not authenticated by it.
+The interceptor authenticates unary and streaming RPCs.
 
 ### Permissions inside handlers
 
@@ -44,19 +44,19 @@ Register the interceptor without permissions to authenticate every method, then 
 
 ```go
 interceptor := sts.NewInterceptor(os.Getenv("STS_VERIFIER_TOKEN"))
-handlerOptions := connect.WithInterceptors(interceptor)
+server := connect.NewServer(interceptor)
 ```
 
 For example, in a generated Connect handler implementation:
 
 ```go
-func (s *DocumentsService) Delete(ctx context.Context, req *connect.Request[pb.DeleteRequest]) (*connect.Response[pb.DeleteResponse], error) {
+func (s *DocumentsService) Delete(ctx context.Context, req *pb.DeleteRequest) (*pb.DeleteResponse, error) {
 	if err := sts.RequirePermissions(ctx, "documents.delete"); err != nil {
 		return nil, errors.Trace(err)
 	}
 
 	// Delete the document.
-	return connect.NewResponse(&pb.DeleteResponse{}), nil
+	return &pb.DeleteResponse{}, nil
 }
 ```
 
