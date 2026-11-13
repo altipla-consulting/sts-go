@@ -2,6 +2,7 @@ package sts
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -227,6 +228,10 @@ func (auth *authenticator) verifyJWT(ctx context.Context, raw string) (authentic
 		result.permissions = append(result.permissions, rule.permissions...)
 	}
 	if !matched {
+		slog.WarnContext(ctx, "actor not allowed",
+			slog.String("issuer", verified.Issuer),
+			slog.String("subject", verified.Subject),
+		)
 		return authentication{}, connect.NewError(connect.CodePermissionDenied, "actor not allowed")
 	}
 	return result, nil
