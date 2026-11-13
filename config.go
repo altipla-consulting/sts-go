@@ -38,11 +38,13 @@ func Configure(config Config) {
 	configured = newAuthenticator(config)
 }
 
-// ActorRule grants permissions to a Google subject or a Convex deployment.
-// Construct rules with GoogleSubject or ConvexApp. Matching grants are additive.
+// ActorRule grants permissions to a Google account or a Convex deployment.
+// Construct rules with GoogleSubject, GoogleServiceAccount, or ConvexApp.
+// Matching grants are additive.
 type ActorRule struct {
 	issuer      string
 	subject     string
+	email       string
 	permissions []string
 }
 
@@ -55,6 +57,20 @@ func GoogleSubject(subject string, permissions ...string) ActorRule {
 	return ActorRule{
 		issuer:      googleIssuer,
 		subject:     subject,
+		permissions: permissions,
+	}
+}
+
+// GoogleServiceAccount accepts a service account by its verified email claim.
+// Tokens must include email and email_verified. A recreated account with the
+// same email is also accepted; use GoogleSubject to bind to a specific account ID.
+func GoogleServiceAccount(email string, permissions ...string) ActorRule {
+	if !strings.HasSuffix(email, ".gserviceaccount.com") {
+		panic("invalid google service account email")
+	}
+	return ActorRule{
+		issuer:      googleIssuer,
+		email:       email,
 		permissions: permissions,
 	}
 }
@@ -185,13 +201,30 @@ func (auth *authenticator) verifyJWT(ctx context.Context, raw string) (authentic
 		return authentication{}, connect.NewError(connect.CodeUnauthenticated, "missing jwt subject")
 	}
 
+	var googleClaims struct {
+		Email         string `json:"email"`
+		EmailVerified bool   `json:"email_verified"`
+	}
+	if verified.Issuer == googleIssuer {
+		if err := verified.Claims(&googleClaims); err != nil {
+			return authentication{}, connect.NewError(connect.CodeUnauthenticated, "invalid google claims")
+		}
+	}
+
 	result := authentication{actor: &Actor{Issuer: verified.Issuer, Subject: verified.Subject}}
 	matched := false
 	for _, rule := range auth.actors {
-		if rule.issuer == verified.Issuer && (rule.subject == "" || rule.subject == verified.Subject) {
-			matched = true
-			result.permissions = append(result.permissions, rule.permissions...)
+		if rule.issuer != verified.Issuer {
+			continue
 		}
+		if rule.subject != "" && rule.subject != verified.Subject {
+			continue
+		}
+		if rule.email != "" && (!googleClaims.EmailVerified || rule.email != googleClaims.Email) {
+			continue
+		}
+		matched = true
+		result.permissions = append(result.permissions, rule.permissions...)
 	}
 	if !matched {
 		return authentication{}, connect.NewError(connect.CodePermissionDenied, "actor not allowed")
