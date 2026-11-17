@@ -11,11 +11,10 @@ require (
 )
 
 require (
+	github.com/altipla-consulting/connect-oauth2 v0.2.1
 	github.com/altipla-consulting/env v0.3.0
 	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/go-jose/go-jose/v4 v4.1.4
-	golang.org/x/oauth2 v0.38.0
-	google.golang.org/api v0.314.0
 )
 
 require (
@@ -37,8 +36,10 @@ require (
 	go.opentelemetry.io/otel/trace v1.47.0 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/net v0.62.0 // indirect
+	golang.org/x/oauth2 v0.38.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
+	google.golang.org/api v0.314.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20261104224025-d1e00e9f33ab // indirect
 	google.golang.org/grpc v1.85.0 // indirect
 )
