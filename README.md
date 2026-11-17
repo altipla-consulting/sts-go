@@ -1,8 +1,8 @@
 # sts-go
 
 Authenticate Connect RPC requests with Google ID tokens, Convex JWTs, or existing
-STS keys verified by https://sts.altipla.consulting. Create HTTP clients that send
-Google ID tokens automatically.
+STS keys verified by https://sts.altipla.consulting. Authenticate Connect clients
+with Google ID tokens automatically.
 
 ## Install
 
@@ -67,29 +67,24 @@ are additive. A valid JWT whose subject matches no rule returns
 
 ### Google clients
 
-Use `sts.NewGoogleClient` to obtain an HTTP client that sends Google ID tokens using
-application default credentials and refreshes them as needed. The credentials must
+Use `sts.GoogleIDToken` to send Google ID tokens through
+[`connect-oauth2`](https://github.com/altipla-consulting/connect-oauth2) using
+application default credentials and refresh them as needed. The credentials must
 support ID token generation, and their Google subject must be allowed by the server.
 For a Connect v2 client:
 
 ```go
 import (
-	"context"
+	"net/http"
 
 	"connectrpc.com/connect/v2"
 	"connectrpc.com/connect/v2/connecthttp"
-	"github.com/altipla-consulting/errors"
 	"github.com/altipla-consulting/sts-go"
 )
 
-func newClient(ctx context.Context) (*connect.Client, error) {
-	httpClient, err := sts.NewGoogleClient(ctx, "https://documents.example.com")
-	if err != nil {
-		return nil, errors.Trace(err)
-	}
-
-	transport := connecthttp.NewTransport(httpClient, "https://documents.example.com")
-	return connect.NewClient(transport), nil
+func newClient() *connect.Client {
+	transport := connecthttp.NewTransport(http.DefaultClient, "https://documents.example.com")
+	return connect.NewClient(transport, sts.GoogleIDToken("https://documents.example.com"))
 }
 ```
 
@@ -148,9 +143,9 @@ or `local-token`. Use it only in handlers that expect JWT authentication.
 ### Local development
 
 Local environments are detected automatically using
-[`env.IsLocal()`](https://github.com/altipla-consulting/env). Locally, interceptors
+[`env.IsProduction()`](https://github.com/altipla-consulting/env). Outside production, interceptors
 accept only `Authorization: Bearer local-token` and skip remote verification and
-permission checks. `sts.NewGoogleClient` sends this token automatically without
+permission checks. `sts.GoogleIDToken` sends this token automatically without
 loading Google credentials. Configuration is still required before creating
 `sts.Require` or `sts.Authenticate` interceptors, and actor rules still require an
 audience.

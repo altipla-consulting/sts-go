@@ -2,27 +2,29 @@ package sts
 
 import (
 	"context"
-	"net/http"
 
+	"connectrpc.com/connect/v2"
+	oauth2 "github.com/altipla-consulting/connect-oauth2"
 	"github.com/altipla-consulting/env"
-	"github.com/altipla-consulting/errors"
-	"golang.org/x/oauth2"
-	"google.golang.org/api/idtoken"
 )
 
-// NewGoogleClient returns an HTTP client that sends Google ID tokens using the
+// GoogleIDToken sends Google ID tokens using the
 // application's default credentials and refreshes them as needed. Set audience
 // to the receiving service's identifier, independently of the request path.
-// When env.IsLocal reports a local environment, it sends local-token instead.
-func NewGoogleClient(ctx context.Context, audience string) (*http.Client, error) {
-	if env.IsLocal() {
-		source := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "local-token"})
-		return oauth2.NewClient(ctx, source), nil
+// Outside production, it sends local-token instead.
+func GoogleIDToken(audience string) connect.ClientInterceptor {
+	if env.IsProduction() {
+		return oauth2.GoogleIDToken(true, audience)
 	}
 
-	client, err := idtoken.NewClient(ctx, audience)
-	if err != nil {
-		return nil, errors.Trace(err)
+	return func(next connect.ClientFunc) connect.ClientFunc {
+		return func(ctx context.Context, spec connect.Spec) (connect.ClientStream, error) {
+			info, ok := connect.CallInfoForClientContext(ctx)
+			if !ok {
+				return nil, connect.NewError(connect.CodeInternal, "missing client call info")
+			}
+			info.RequestHeader().Set("Authorization", "Bearer local-token")
+			return next(ctx, spec)
+		}
 	}
-	return client, nil
 }
