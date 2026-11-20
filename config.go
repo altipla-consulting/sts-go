@@ -76,14 +76,18 @@ func GoogleServiceAccount(email string, permissions ...string) ActorRule {
 	}
 }
 
-// ConvexApp accepts every subject signed by the named deployment.
-// Pass its deployment name, such as gentle-fox-123.
-func ConvexApp(deployment string, permissions ...string) ActorRule {
-	if deployment == "" {
+// ConvexApp accepts every subject signed by the configured Convex app.
+// Pass its full HTTPS issuer URL, including custom domains or regional hosts.
+// Deployment names such as gentle-fox-123 expand to https://gentle-fox-123.convex.cloud.
+func ConvexApp(issuer string, permissions ...string) ActorRule {
+	if issuer == "" {
 		panic("missing convex deployment")
 	}
+	if !strings.HasPrefix(issuer, "https://") {
+		issuer = "https://" + issuer + ".convex.cloud"
+	}
 	return ActorRule{
-		issuer:      "https://" + deployment + ".convex.cloud",
+		issuer:      issuer,
 		permissions: permissions,
 	}
 }
