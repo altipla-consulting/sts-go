@@ -50,10 +50,11 @@ without an audience panics, as does passing an empty permission to `sts.Require`
 - `sts.GoogleSubject(subject, permissions...)` accepts a Google service account or
   user by its stable `sub` claim, not its email address. Google tokens must use the
   issuer `https://accounts.google.com` and an RS256 signature.
-- `sts.ConvexApp(deployment, permissions...)` accepts every subject signed by the
-  named deployment. Pass the deployment name, such as `gentle-fox-123`, rather than
-  its URL. Tokens must use the issuer `https://<deployment>.convex.cloud` and an
-  ES256 signature.
+- `sts.ConvexApp(issuer, permissions...)` accepts every subject signed by the
+  Convex app. Pass its full HTTPS issuer URL, including custom domains or regional
+  hosts such as `https://auth.example.com`. A bare deployment name, such as
+  `gentle-fox-123`, expands to `https://gentle-fox-123.convex.cloud`. Tokens must
+  use that exact issuer and an ES256 signature.
 - `VerifierToken` enables verification of existing opaque STS keys. Their
   permissions come from the STS service. Leave it empty to disable legacy keys;
   omit `Audience` and `Actors` if you only accept STS keys.
